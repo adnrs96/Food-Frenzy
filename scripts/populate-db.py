@@ -11,6 +11,7 @@ from app_frenzy.models import Restaurant
 from scripts.transformers import (
     transform_into_menu_objs,
     transform_into_restaurant_obj,
+    transform_into_restaurant_timing_objs,
 )
 from sqlalchemy.orm import Session
 
@@ -57,6 +58,18 @@ def populate_menu_items(
     session.flush()
 
 
+def populate_restaurant_timing(
+    restaurant_timings: str,
+    restaurant: Restaurant,
+    session: Session,
+):
+    restaurant_timing_objs = transform_into_restaurant_timing_objs(
+        restaurant_timings, restaurant
+    )
+    session.add_all(restaurant_timing_objs)
+    session.flush()
+
+
 def _populate_restaurants(restaurants: Dict[str, Dict], session: Session):
     for _, restaurant in restaurants.items():
         restaurant_obj = transform_into_restaurant_obj(restaurant)
@@ -64,6 +77,9 @@ def _populate_restaurants(restaurants: Dict[str, Dict], session: Session):
         session.flush()
 
         populate_menu_items(restaurant["menu"], restaurant_obj, session)
+        populate_restaurant_timing(
+            restaurant["openingHours"], restaurant_obj, session
+        )
 
 
 def populate_restaurants(file_path: str):
