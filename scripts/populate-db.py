@@ -7,8 +7,11 @@ APP_FRENZY_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(APP_FRENZY_PATH)
 
 from app_frenzy.db import SessionLocal
-from app_frenzy.models import MenuItem, Restaurant
-from app_frenzy.schemas import MenuItemSchema, RestaurantSchema
+from app_frenzy.models import Restaurant
+from scripts.transformers import (
+    transform_into_menu_objs,
+    transform_into_restaurant_obj,
+)
 from sqlalchemy.orm import Session
 
 import json
@@ -46,25 +49,17 @@ def generate_field_map_from_list_dict(lst: List[Dict], dict_field_name: str):
     return mapping
 
 
-def make_model_obj(doc: dict, schema, model):
-    return model(**schema(**doc).dict())
-
-
 def populate_menu_items(
     menu_items: List[Dict], restaurant: Restaurant, session: Session
 ):
-    for menu_item in menu_items:
-        menu_item_obj = make_model_obj(menu_item, MenuItemSchema, MenuItem)
-        menu_item_obj.restaurant = restaurant.id
-        session.add(menu_item_obj)
+    menu_item_objs = transform_into_menu_objs(menu_items, restaurant)
+    session.add_all(menu_item_objs)
     session.flush()
 
 
 def _populate_restaurants(restaurants: Dict[str, Dict], session: Session):
     for _, restaurant in restaurants.items():
-        restaurant_obj = make_model_obj(
-            restaurant, RestaurantSchema, Restaurant
-        )
+        restaurant_obj = transform_into_restaurant_obj(restaurant)
         session.add(restaurant_obj)
         session.flush()
 
