@@ -80,6 +80,7 @@ def _populate_restaurants(restaurants: Dict[str, Dict], session: Session):
         populate_restaurant_timing(
             restaurant["openingHours"], restaurant_obj, session
         )
+        session.commit()
 
 
 def populate_restaurants(file_path: str):
@@ -89,7 +90,6 @@ def populate_restaurants(file_path: str):
     )
     with SessionLocal() as session:
         _populate_restaurants(restaurant_map, session)
-        session.commit()
 
 
 if __name__ == "__main__":
