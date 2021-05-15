@@ -1,11 +1,18 @@
 from dateutil.parser import parse
 from typing import Dict, List
 
-from app_frenzy.models import Days, MenuItem, Restaurant, RestaurantTiming
+from app_frenzy.models import (
+    Days,
+    MenuItem,
+    Restaurant,
+    RestaurantTiming,
+    User,
+)
 from app_frenzy.schemas import (
     MenuItemSchema,
     RestaurantSchema,
     RestaurantTimingSchema,
+    UserSchema,
 )
 
 import re
@@ -90,3 +97,7 @@ def transform_into_menu_objs(menu_items: List[Dict], restaurant: Restaurant):
 
 def transform_into_restaurant_obj(restaurant: dict):
     return make_model_obj(restaurant, RestaurantSchema, Restaurant)
+
+
+def transform_into_user_obj(user: dict):
+    return make_model_obj(user, UserSchema, User)
