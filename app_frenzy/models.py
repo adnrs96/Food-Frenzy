@@ -30,7 +30,7 @@ class Days(enum.Enum):
 class Restaurant(AppFrenzyBase):
     __tablename__ = "restaurant"
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, index=True)
     cash_balance = Column(Float)
     menu = relationship("MenuItem")
     timings = relationship("RestaurantTiming")
@@ -40,7 +40,7 @@ class MenuItem(AppFrenzyBase):
     __tablename__ = "menu_item"
     id = Column(Integer, primary_key=True)
     restaurant = Column(Integer, ForeignKey("restaurant.id"))
-    dish_name = Column(String)
+    dish_name = Column(String, index=True)
     price = Column(Float, index=True)
 
 
