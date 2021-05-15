@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 settings = get_app_frenzy_settings()
 
-engine = create_engine(settings.DATABASE_CONN_STR)
+engine = create_engine(settings.DATABASE_CONN_STR, echo=settings.DEBUG)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 AppFrenzyBase = declarative_base()
