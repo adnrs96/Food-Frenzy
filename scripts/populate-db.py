@@ -12,6 +12,7 @@ from scripts.transformers import (
     transform_into_menu_objs,
     transform_into_restaurant_obj,
     transform_into_restaurant_timing_objs,
+    transform_into_user_obj,
 )
 from sqlalchemy.orm import Session
 
@@ -92,9 +93,24 @@ def populate_restaurants(file_path: str):
         _populate_restaurants(restaurant_map, session)
 
 
+def _populate_users(users: List[Dict], session: Session):
+    for user in users:
+        user_obj = transform_into_user_obj(user)
+        session.add(user_obj)
+        session.flush()
+        session.commit()
+
+
+def populate_users(file_path: str):
+    users = read_json(file_path)
+    with SessionLocal() as session:
+        _populate_users(users, session)
+
+
 if __name__ == "__main__":
     create_data_dir_if_not_exists()
 
     fetch_and_save(RESTAURANT_DATA_URI, RESTAURANT_FILE_PATH)
     fetch_and_save(USER_DATA_URI, USER_FILE_PATH)
     populate_restaurants(RESTAURANT_FILE_PATH)
+    populate_users(USER_FILE_PATH)
