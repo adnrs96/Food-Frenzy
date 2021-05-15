@@ -4,6 +4,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Enum,
     Float,
     ForeignKey,
     Integer,
@@ -12,6 +13,18 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import Index
+
+import enum
+
+
+class Days(enum.Enum):
+    mon = 0
+    tues = 1
+    weds = 2
+    thurs = 3
+    fri = 4
+    sat = 5
+    sun = 6
 
 
 class Restaurant(AppFrenzyBase):
@@ -38,7 +51,7 @@ class RestaurantTiming(AppFrenzyBase):
     )
     id = Column(Integer, primary_key=True)
     restaurant = Column(Integer, ForeignKey("restaurant.id"))
-    day = Column(String)
+    day = Column(Enum(Days))
     opens = Column(Time)
     closes = Column(Time)
 
