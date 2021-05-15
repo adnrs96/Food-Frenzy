@@ -10,6 +10,7 @@ class RestaurantSchema(BaseModel):
 
 
 class MenuItemSchema(BaseModel):
+    restaurant: Optional[int]
     dish_name: str = Field(alias="dishName")
     price: float
 
