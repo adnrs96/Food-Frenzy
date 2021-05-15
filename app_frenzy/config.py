@@ -4,6 +4,7 @@ from pydantic import BaseSettings
 
 class AppFrenzySettings(BaseSettings):
     DATABASE_CONN_STR: str
+    DEBUG: bool
 
 
 @lru_cache
