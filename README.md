@@ -187,6 +187,7 @@ Response Schema
 }
 ```
 
+**NOTE**: You can also see the API interface in Swagger UI by visiting http://localhost:8000/docs on the running server.
 
 # Quick Setup using Docker
 
