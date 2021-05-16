@@ -22,10 +22,6 @@ class RestaurantFilter:
 
     def __init__(self, filters, open_at, price_lower, price_upper):
         self.filters = filters
-        if not self.filters:
-            # By default if no filters are specified we apply
-            # RestaurantFilterEnum.OPEN_AT
-            self.filters.append(RestaurantFilterEnum.OPEN_AT)
         # Parse and transform query params to required form.
         # Raises Error on failure.
         query_params = RestaurantFilterQueryParamsSchema(
@@ -38,6 +34,11 @@ class RestaurantFilter:
         self.price_upper = query_params["price_upper"]
 
         self.validate_filter_params()
+        self.optimise_filters()
+        if self.add_default_filter():
+            # By default if no filters are specified we apply
+            # RestaurantFilterEnum.OPEN_AT
+            self.filters.append(RestaurantFilterEnum.OPEN_AT)
 
     @staticmethod
     def validate_filters(filters: List[str]):
@@ -58,6 +59,18 @@ class RestaurantFilter:
                 status_code=422,
                 detail="Filter price requires at least one of price_lower or price_upper.",
             )
+
+    def optimise_filters(self):
+        # In this function we will be removing the filters
+        # which are useless since they don't really filter on anything.
+
+        # Remove multiple instances of same filter.
+        self.filters = list(set(self.filters))
+
+    def add_default_filter(self):
+        if not self.filters:
+            return True
+        return False
 
     def apply_filter_open_at(self, query, open_at: datetime):
         day = Days(open_at.weekday())
