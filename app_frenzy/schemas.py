@@ -1,5 +1,5 @@
 from app_frenzy.models import Days
-from datetime import time
+from datetime import datetime, time
 from pydantic import BaseModel, Field
 from typing import Optional
 
@@ -26,3 +26,11 @@ class UserSchema(BaseModel):
     str_id: str = Field(alias="id")
     name: str
     cash_balance: float = Field(alias="cashBalance")
+
+
+class UserTransactionSchema(BaseModel):
+    user: Optional[int]
+    restaurant: Optional[int]
+    menu_item: Optional[int]
+    transaction_amount: float = Field(alias="transactionAmount")
+    transaction_date: datetime = Field(alias="transactionDate")

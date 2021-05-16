@@ -1,18 +1,23 @@
 from dateutil.parser import parse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from typing import Dict, List
 
+from app_frenzy.db import SessionLocal
 from app_frenzy.models import (
     Days,
     MenuItem,
     Restaurant,
     RestaurantTiming,
     User,
+    UserTransaction,
 )
 from app_frenzy.schemas import (
     MenuItemSchema,
     RestaurantSchema,
     RestaurantTimingSchema,
     UserSchema,
+    UserTransactionSchema,
 )
 
 import re
@@ -97,6 +102,41 @@ def transform_into_menu_objs(menu_items: List[Dict], restaurant: Restaurant):
 
 def transform_into_restaurant_obj(restaurant: dict):
     return make_model_obj(restaurant, RestaurantSchema, Restaurant)
+
+
+def get_restaurant_with_name(name: str, session: Session):
+    query = select(Restaurant).filter_by(name=name)
+    return session.execute(query).scalars().first()
+
+
+def get_menu_item_with_dish_name(dish_name: str, session: Session):
+    query = select(MenuItem).filter_by(dish_name=dish_name)
+    return session.execute(query).scalars().first()
+
+
+def transform_into_purchase_history_objs(
+    purchase_history: List[Dict], user: User
+):
+    objs = []
+    for purchase in purchase_history:
+        with SessionLocal() as session:
+            restaurant = get_restaurant_with_name(
+                purchase["restaurantName"], session
+            )
+            menu_item = get_menu_item_with_dish_name(
+                purchase["dishName"], session
+            )
+            doc = {
+                "user": user.id,
+                "restaurant": restaurant.id,
+                "menu_item": menu_item.id,
+                "transactionAmount": purchase["transactionAmount"],
+                "transactionDate": parse(purchase["transactionDate"].strip()),
+            }
+            objs.append(
+                make_model_obj(doc, UserTransactionSchema, UserTransaction)
+            )
+    return objs
 
 
 def transform_into_user_obj(user: dict):

@@ -7,9 +7,10 @@ APP_FRENZY_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(APP_FRENZY_PATH)
 
 from app_frenzy.db import SessionLocal
-from app_frenzy.models import Restaurant
+from app_frenzy.models import Restaurant, User
 from scripts.transformers import (
     transform_into_menu_objs,
+    transform_into_purchase_history_objs,
     transform_into_restaurant_obj,
     transform_into_restaurant_timing_objs,
     transform_into_user_obj,
@@ -93,11 +94,25 @@ def populate_restaurants(file_path: str):
         _populate_restaurants(restaurant_map, session)
 
 
+def populate_user_purchase_history(
+    purchase_history: List[Dict], user: User, session: Session
+):
+    purchase_history_objs = transform_into_purchase_history_objs(
+        purchase_history, user
+    )
+    session.add_all(purchase_history_objs)
+    session.flush()
+
+
 def _populate_users(users: List[Dict], session: Session):
     for user in users:
         user_obj = transform_into_user_obj(user)
         session.add(user_obj)
         session.flush()
+
+        populate_user_purchase_history(
+            user["purchaseHistory"], user_obj, session
+        )
         session.commit()
 
 
