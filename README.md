@@ -186,3 +186,71 @@ Response Schema
     }
 }
 ```
+
+
+# Quick Setup using Docker
+
+This setup is just for the purpose of quickly spinning up the env and play with things. Ideally I wouldn't wanna create db connection string this way.
+#### Steps:
+* Export the following variables in your terminal.
+    * `export DEBUG=True`
+    * `export POSTGRES_PASSWORD="<somepassword>"`
+    * `export DATABASE_CONN_STR="postgresql://postgres:<samepasswordhere>@db:5432/postgres"`
+    * `export INIT_DB=true`
+* Run Docker compose `docker-compose up`
+
+Docker will start pulling postgres and building the food frenzy app. Web server may fail to start the very first time due to database connectivity issue (database not ready yet).
+Please stop docker images and do `docker-compose up` again to restart.
+
+**NOTE**: `INIT_DB` controls database table creation and also populating the database using the raw datasets available. This runs the ETL scripts and as a result would be slow. This would slow down the start so wait for web server to start.
+
+**NOTE: `INIT_DB=true` should only be used for first time startup. Once data is populated we do not want to run the ETL scripts again. They are not idempotent by design.** 
+
+# Detailed Build Instructions.
+
+You can do this with or without a venv but I am gonna try include usage of a venv in the instructions.
+
+* Make sure you have python 3.8 installed.
+* Make sure you have PostgreSQL 12 installed.
+* `pip3 install virtualenv`
+* Extract the project zip I sent you and open up a terminal to the project folder location.
+*  `virtualenv app-frenzy-venv` This will create a virtual env.
+*  `source app-frenzy-venv/bin/activate`
+*  `pip install -r requirements.txt`
+
+### Create a database inside postgresql to be used in the app.
+* Drop to psql shell. `psql`
+* `CREATE DATABASE app_frenzy;`
+* `CREATE USER app_frenzy WITH PASSWORD <password here>;`
+* `ALTER ROLE app_frenzy SET client_encoding TO 'utf8';`
+* `ALTER ROLE app_frenzy SET default_transaction_isolation TO 'read committed';`
+* `ALTER ROLE app_frenzy SET timezone TO 'UTC';`
+* `GRANT ALL PRIVILEGES ON DATABASE app_frenzy TO app_frenzy;`
+
+### Export required env variables
+* `export DATABASE_CONN_STR='postgresql://app_frenzy:<userpassword>@localhost:5432/app_frenzy'`
+* `export DEBUG=True`
+
+### Create database tables
+Run the following command after activating the virtual env to run init-db script.
+
+`python scripts/init-db.py`
+
+### Run the ETL script
+Run the following command after activating the virtual env to run populate-db script.
+
+**Note: Do not run the ETL script multiple times since it isn't idempotent**
+
+`python scripts/populate-db.py`
+
+### Run the server (Dev)
+Run the following command after activating the virtual env to run development server.
+
+`python main.py`
+
+Make sure you run this from the project directory.
+
+### Run the server (with gunicorn process manager)
+Run the following command after activating the virtual env
+
+`bash entrypoint.sh`
