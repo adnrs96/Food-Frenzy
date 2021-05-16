@@ -5,6 +5,7 @@ from app_frenzy.models import Days, MenuItem, Restaurant, RestaurantTiming
 from app_frenzy.schemas import RestaurantFilterQueryParamsSchema
 from app_frenzy.db import SessionLocal
 
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -36,6 +37,8 @@ class RestaurantFilter:
         self.price_lower = query_params["price_lower"]
         self.price_upper = query_params["price_upper"]
 
+        self.validate_filter_params()
+
     @staticmethod
     def validate_filters(filters: List[str]):
         if len(filters) > len(RestaurantFilter.FILTERS):
@@ -44,6 +47,17 @@ class RestaurantFilter:
             if filter_type not in RestaurantFilter.FILTERS:
                 return False
         return True
+
+    def validate_filter_params(self):
+        if (
+            self.price_lower is None
+            and self.price_upper is None
+            and RestaurantFilterEnum.PRICE.value in self.filters
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Filter price requires at least one of price_lower or price_upper.",
+            )
 
     def apply_filter_open_at(self, query, open_at: datetime):
         day = Days(open_at.weekday())
