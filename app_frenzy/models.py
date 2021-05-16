@@ -86,7 +86,7 @@ class RestaurantTiming(AppFrenzyBase):
 class User(AppFrenzyBase):
     __tablename__ = "user"
     id = Column(Integer, primary_key=True)
-    str_id = Column(String, index=True)
+    user_id = Column(Integer, index=True)
     name = Column(String)
     cash_balance = Column(Float)
     purchase_history = relationship("UserTransaction")

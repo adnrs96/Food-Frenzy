@@ -25,7 +25,7 @@ class RestaurantTimingSchema(BaseModel):
 
 
 class UserSchema(BaseModel):
-    str_id: str = Field(alias="id")
+    user_id: int = Field(alias="id")
     name: str
     cash_balance: float = Field(alias="cashBalance")
 
