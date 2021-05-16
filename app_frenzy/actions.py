@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import List
 
-from app_frenzy.models import Days, Restaurant, RestaurantTiming
+from app_frenzy.models import Days, MenuItem, Restaurant, RestaurantTiming
 from app_frenzy.schemas import RestaurantFilterQueryParamsSchema
 from app_frenzy.db import SessionLocal
 
@@ -13,12 +13,13 @@ import enum
 
 class RestaurantFilterEnum(enum.Enum):
     OPEN_AT = "open_at"
+    PRICE = "price"
 
 
 class RestaurantFilter:
     FILTERS = list(map(lambda x: x.value, list(RestaurantFilterEnum)))
 
-    def __init__(self, filters, open_at):
+    def __init__(self, filters, open_at, price_lower, price_upper):
         self.filters = filters
         if not self.filters:
             # By default if no filters are specified we apply
@@ -27,9 +28,13 @@ class RestaurantFilter:
         # Parse and transform query params to required form.
         # Raises Error on failure.
         query_params = RestaurantFilterQueryParamsSchema(
-            open_at=open_at
+            open_at=open_at,
+            price_lower=price_lower,
+            price_upper=price_upper,
         ).dict()
         self.open_at = query_params["open_at"]
+        self.price_lower = query_params["price_lower"]
+        self.price_upper = query_params["price_upper"]
 
     @staticmethod
     def validate_filters(filters: List[str]):
@@ -50,6 +55,14 @@ class RestaurantFilter:
         )
         return query
 
+    def apply_filter_price(self, query, price_lower, price_upper):
+        query = query.join(Restaurant.menu)
+        if price_lower:
+            query = query.filter(MenuItem.price >= price_lower)
+        if price_upper:
+            query = query.filter(MenuItem.price <= price_upper)
+        return query
+
     def get_filtered_restaurants(self):
         with SessionLocal() as session:
             query = select(Restaurant)
@@ -59,6 +72,10 @@ class RestaurantFilter:
                         self.open_at if self.open_at else datetime.utcnow()
                     )
                     query = self.apply_filter_open_at(query, self.open_at)
+                elif filter_type == RestaurantFilterEnum.PRICE.value:
+                    query = self.apply_filter_price(
+                        query, self.price_lower, self.price_upper
+                    )
             return session.execute(query).scalars().all()
 
 

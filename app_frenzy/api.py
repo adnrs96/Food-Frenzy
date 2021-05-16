@@ -15,11 +15,15 @@ router = APIRouter()
 async def list_restaurant(
     filter_types: List[str] = Query(..., alias="filter"),
     open_at: Optional[int] = Query(None),
+    price_lower: Optional[float] = Query(None),
+    price_upper: Optional[float] = Query(None),
 ):
     if not RestaurantFilter.validate_filters(filter_types):
         raise HTTPException(status_code=422, detail="Invalid filters.")
     try:
-        restaurant_filter = RestaurantFilter(filter_types, open_at)
+        restaurant_filter = RestaurantFilter(
+            filter_types, open_at, price_lower, price_upper
+        )
         restaurants = restaurant_filter.get_filtered_restaurants()
         results = GenerateResponse(
             restaurants, ListRestaurantResponseSchema

@@ -38,6 +38,8 @@ class UserTransactionSchema(BaseModel):
 
 class RestaurantFilterQueryParamsSchema(BaseModel):
     open_at: Optional[datetime]
+    price_lower: Optional[float]
+    price_upper: Optional[float]
 
     @validator("open_at", pre=True)
     def validate_transform_open_at(cls, value):
