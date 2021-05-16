@@ -6,7 +6,7 @@ from app_frenzy.schemas import RestaurantFilterQueryParamsSchema
 from app_frenzy.db import SessionLocal
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 import enum
@@ -15,12 +15,15 @@ import enum
 class RestaurantFilterEnum(enum.Enum):
     OPEN_AT = "open_at"
     PRICE = "price"
+    NDISH = "ndish"
 
 
 class RestaurantFilter:
     FILTERS = list(map(lambda x: x.value, list(RestaurantFilterEnum)))
 
-    def __init__(self, filters, open_at, price_lower, price_upper):
+    def __init__(
+        self, filters, open_at, price_lower, price_upper, ndish_gt, ndish_lt
+    ):
         self.filters = filters
         # Parse and transform query params to required form.
         # Raises Error on failure.
@@ -28,10 +31,14 @@ class RestaurantFilter:
             open_at=open_at,
             price_lower=price_lower,
             price_upper=price_upper,
+            ndish_gt=ndish_gt,
+            ndish_lt=ndish_lt,
         ).dict()
         self.open_at = query_params["open_at"]
         self.price_lower = query_params["price_lower"]
         self.price_upper = query_params["price_upper"]
+        self.ndish_gt = query_params["ndish_gt"]
+        self.ndish_lt = query_params["ndish_lt"]
 
         self.validate_filter_params()
         self.optimise_filters()
@@ -58,6 +65,15 @@ class RestaurantFilter:
             raise HTTPException(
                 status_code=422,
                 detail="Filter price requires at least one of price_lower or price_upper.",
+            )
+        if (
+            self.ndish_gt is None
+            and self.ndish_lt is None
+            and RestaurantFilterEnum.NDISH.value in self.filters
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Filter ndish requires at least one of ndish_gt or ndish_lt.",
             )
 
     def optimise_filters(self):
@@ -95,6 +111,29 @@ class RestaurantFilter:
             query = query.filter(MenuItem.price <= price_upper)
         return query
 
+    def apply_filter_ndish(
+        self,
+        query,
+        joins,
+        ndish_gt,
+        ndish_lt,
+    ):
+        # Preferance is given to greater than if both the
+        # operations are present in the request and we allow
+        # it to flow to db.
+        if "menu" not in joins:
+            joins["menu"] = 1
+            query = query.join(Restaurant.menu)
+        if ndish_gt:
+            query = query.group_by(Restaurant.id).having(
+                func.count(Restaurant.menu) > ndish_gt
+            )
+        elif ndish_lt:
+            query = query.group_by(Restaurant.id).having(
+                func.count(Restaurant.menu) < ndish_lt
+            )
+        return query
+
     def get_filtered_restaurants(self):
         with SessionLocal() as session:
             query = select(Restaurant)
@@ -109,6 +148,10 @@ class RestaurantFilter:
                 elif filter_type == RestaurantFilterEnum.PRICE.value:
                     query = self.apply_filter_price(
                         query, joins, self.price_lower, self.price_upper
+                    )
+                elif filter_type == RestaurantFilterEnum.NDISH.value:
+                    query = self.apply_filter_ndish(
+                        query, joins, self.ndish_gt, self.ndish_lt
                     )
             return session.execute(query).scalars().all()
 
