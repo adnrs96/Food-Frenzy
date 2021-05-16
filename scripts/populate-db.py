@@ -17,6 +17,7 @@ from scripts.transformers import (
 )
 from sqlalchemy.orm import Session
 
+import logging
 import json
 import requests
 
@@ -125,7 +126,9 @@ def populate_users(file_path: str):
 if __name__ == "__main__":
     create_data_dir_if_not_exists()
 
+    logging.info("Starting Fetch and populate database. Slow operation.")
     fetch_and_save(RESTAURANT_DATA_URI, RESTAURANT_FILE_PATH)
     fetch_and_save(USER_DATA_URI, USER_FILE_PATH)
     populate_restaurants(RESTAURANT_FILE_PATH)
     populate_users(USER_FILE_PATH)
+    logging.info("Database population complete. Server will start now.")
