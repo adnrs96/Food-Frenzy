@@ -76,3 +76,20 @@ class ListMenuItemResponseSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ProcessCartRequestSchema(BaseModel):
+    restaurant_id: int
+    dish_id: int
+    user_id: int
+
+
+class UserTransactionResponseSchema(BaseModel):
+    id: int
+    restaurant: int
+    menu_item: int
+    transaction_amount: float
+    transaction_date: datetime
+
+    class Config:
+        orm_mode = True

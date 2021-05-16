@@ -1,8 +1,19 @@
 from datetime import datetime, timezone
 from typing import List
 
-from app_frenzy.models import Days, MenuItem, Restaurant, RestaurantTiming
-from app_frenzy.schemas import RestaurantFilterQueryParamsSchema
+from app_frenzy.models import (
+    Days,
+    MenuItem,
+    Restaurant,
+    RestaurantTiming,
+    User,
+    UserTransaction,
+)
+from app_frenzy.schemas import (
+    RestaurantFilterQueryParamsSchema,
+    ProcessCartRequestSchema,
+    UserTransactionResponseSchema,
+)
 from app_frenzy.db import SessionLocal
 
 from fastapi import HTTPException
@@ -184,6 +195,54 @@ class Search:
                 self.field.op("@@")(func.plainto_tsquery(self.terms))
             )
             return session.execute(query).scalars().all()
+
+
+class Cart:
+    def __init__(self, cart: ProcessCartRequestSchema):
+        self.cart = cart
+
+    def get_user_by_id(self, user_id, session):
+        return session.execute(
+            select(User).filter_by(user_id=user_id)
+        ).scalar_one()
+
+    def get_restaurant_by_id(self, restaurant_id, session):
+        return session.get(Restaurant, restaurant_id)
+
+    def get_menu_item_by_id(self, menu_id, session):
+        return session.get(MenuItem, menu_id)
+
+    def process(self):
+        with SessionLocal() as session:
+            restaurant = self.get_restaurant_by_id(
+                self.cart.restaurant_id, session
+            )
+            user = self.get_user_by_id(self.cart.user_id, session)
+            menu_item = self.get_menu_item_by_id(self.cart.dish_id, session)
+            user_transaction = UserTransaction(
+                user=user.id,
+                restaurant=restaurant.id,
+                menu_item=menu_item.id,
+                transaction_amount=menu_item.price,
+                transaction_date=datetime.utcnow(),
+            )
+            restaurant.cash_balance = Restaurant.cash_balance + menu_item.price
+            user.cash_balance = User.cash_balance - menu_item.price
+
+            session.add(user_transaction)
+            session.flush()
+
+            if user.cash_balance < 0:
+                raise HTTPException(
+                    status_code=402, detail="Wallet low on funds."
+                )
+
+            result = GenerateResponse(
+                user_transaction, UserTransactionResponseSchema
+            ).generate()
+
+            session.commit()
+            return result
 
 
 class GenerateResponse:

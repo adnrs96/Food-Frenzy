@@ -4,11 +4,12 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import ValidationError
 
-from app_frenzy.actions import GenerateResponse, RestaurantFilter, Search
+from app_frenzy.actions import Cart, GenerateResponse, RestaurantFilter, Search
 from app_frenzy.models import Restaurant, MenuItem
 from app_frenzy.schemas import (
     ListMenuItemResponseSchema,
     ListRestaurantResponseSchema,
+    ProcessCartRequestSchema,
 )
 
 
@@ -74,3 +75,15 @@ async def search(
         "restaurants": restaurant_results,
         "dishes": menu_item_results,
     }
+
+
+@router.post("/cart/process")
+async def process_cart(
+    cart: ProcessCartRequestSchema,
+):
+    try:
+        cart_controller = Cart(cart)
+        result = cart_controller.process()
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid body structure.")
+    return {"status": "success", "result": result}
