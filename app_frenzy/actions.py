@@ -22,7 +22,14 @@ class RestaurantFilter:
     FILTERS = list(map(lambda x: x.value, list(RestaurantFilterEnum)))
 
     def __init__(
-        self, filters, open_at, price_lower, price_upper, ndish_gt, ndish_lt
+        self,
+        filters,
+        open_at,
+        price_lower,
+        price_upper,
+        ndish_gt,
+        ndish_lt,
+        limit,
     ):
         self.filters = filters
         # Parse and transform query params to required form.
@@ -33,12 +40,14 @@ class RestaurantFilter:
             price_upper=price_upper,
             ndish_gt=ndish_gt,
             ndish_lt=ndish_lt,
+            limit=limit,
         ).dict()
         self.open_at = query_params["open_at"]
         self.price_lower = query_params["price_lower"]
         self.price_upper = query_params["price_upper"]
         self.ndish_gt = query_params["ndish_gt"]
         self.ndish_lt = query_params["ndish_lt"]
+        self.limit = query_params["limit"]
 
         self.validate_filter_params()
         self.optimise_filters()
@@ -134,6 +143,11 @@ class RestaurantFilter:
             )
         return query
 
+    def apply_limit(self, query, limit):
+        if not limit:
+            return query
+        return query.limit(limit)
+
     def get_filtered_restaurants(self):
         with SessionLocal() as session:
             query = select(Restaurant)
@@ -153,6 +167,7 @@ class RestaurantFilter:
                     query = self.apply_filter_ndish(
                         query, joins, self.ndish_gt, self.ndish_lt
                     )
+            query = self.apply_limit(query, self.limit)
             return session.execute(query).scalars().all()
 
 

@@ -44,6 +44,7 @@ class RestaurantFilterQueryParamsSchema(BaseModel):
     price_upper: Optional[float]
     ndish_gt: Optional[int]
     ndish_lt: Optional[int]
+    limit: Optional[int]
 
     @validator("open_at", pre=True)
     def validate_transform_open_at(cls, value):
