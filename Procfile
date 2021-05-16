@@ -1,1 +1,1 @@
-web: gunicorn app_frenzy.app:app -w 4 --bind 0.0.0.0:8000 -k uvicorn.workers.UvicornWorker --access-logfile -
+web: bash entrypoint.sh
