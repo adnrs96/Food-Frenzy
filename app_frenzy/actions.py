@@ -105,9 +105,7 @@ class RestaurantFilter:
                     open_at = (
                         self.open_at if self.open_at else datetime.utcnow()
                     )
-                    query = self.apply_filter_open_at(
-                        query, joins, self.open_at
-                    )
+                    query = self.apply_filter_open_at(query, joins, open_at)
                 elif filter_type == RestaurantFilterEnum.PRICE.value:
                     query = self.apply_filter_price(
                         query, joins, self.price_lower, self.price_upper
