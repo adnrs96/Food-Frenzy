@@ -72,18 +72,23 @@ class RestaurantFilter:
             return True
         return False
 
-    def apply_filter_open_at(self, query, open_at: datetime):
+    def apply_filter_open_at(self, query, joins, open_at: datetime):
         day = Days(open_at.weekday())
         open_at_time = open_at.time()
-        query = query.join(Restaurant.timings).filter(
+        if "timings" not in joins:
+            joins["timings"] = 1
+            query = query.join(Restaurant.timings)
+        query = query.filter(
             RestaurantTiming.day == day,
             RestaurantTiming.opens < open_at_time,
             RestaurantTiming.closes > open_at_time,
         )
         return query
 
-    def apply_filter_price(self, query, price_lower, price_upper):
-        query = query.join(Restaurant.menu)
+    def apply_filter_price(self, query, joins, price_lower, price_upper):
+        if "menu" not in joins:
+            joins["menu"] = 1
+            query = query.join(Restaurant.menu)
         if price_lower:
             query = query.filter(MenuItem.price >= price_lower)
         if price_upper:
@@ -93,15 +98,19 @@ class RestaurantFilter:
     def get_filtered_restaurants(self):
         with SessionLocal() as session:
             query = select(Restaurant)
+            # This dict is mutated by downstream filter funcs
+            joins = {}
             for filter_type in self.filters:
                 if filter_type == RestaurantFilterEnum.OPEN_AT.value:
                     open_at = (
                         self.open_at if self.open_at else datetime.utcnow()
                     )
-                    query = self.apply_filter_open_at(query, self.open_at)
+                    query = self.apply_filter_open_at(
+                        query, joins, self.open_at
+                    )
                 elif filter_type == RestaurantFilterEnum.PRICE.value:
                     query = self.apply_filter_price(
-                        query, self.price_lower, self.price_upper
+                        query, joins, self.price_lower, self.price_upper
                     )
             return session.execute(query).scalars().all()
 
