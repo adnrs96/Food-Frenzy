@@ -28,7 +28,7 @@ async def list_restaurant(
         results = GenerateResponse(
             restaurants, ListRestaurantResponseSchema
         ).generate()
-    except ValidationError:
+    except ValueError:
         raise HTTPException(
             status_code=422, detail="Invalid filters or query params."
         )

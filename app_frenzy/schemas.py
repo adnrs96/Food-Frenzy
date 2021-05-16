@@ -1,6 +1,8 @@
 from app_frenzy.models import Days
 from datetime import datetime, time
-from pydantic import BaseModel, Field, validator, ValidationError
+
+from fastapi import HTTPException
+from pydantic import BaseModel, Field, validator
 from typing import Optional
 
 
@@ -48,7 +50,10 @@ class RestaurantFilterQueryParamsSchema(BaseModel):
         try:
             dt = datetime.utcfromtimestamp(value)
         except Exception:
-            raise ValidationError("Invalid timestampt format: open_at")
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid timestamp format: open_at.",
+            )
         return dt
 
 
