@@ -9,6 +9,7 @@ services:
     environment:
       - DATABASE_CONN_STR
       - INIT_DB
+      - DEBUG
     depends_on:
       - "db" 
   db:
