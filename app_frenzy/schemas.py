@@ -66,3 +66,13 @@ class ListRestaurantResponseSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ListMenuItemResponseSchema(BaseModel):
+    id: int
+    restaurant_id: int = Field(alias="restaurant")
+    dish_name: str
+    price: float
+
+    class Config:
+        orm_mode = True

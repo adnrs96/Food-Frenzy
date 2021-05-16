@@ -4,8 +4,12 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import ValidationError
 
-from app_frenzy.actions import RestaurantFilter, GenerateResponse
-from app_frenzy.schemas import ListRestaurantResponseSchema
+from app_frenzy.actions import GenerateResponse, RestaurantFilter, Search
+from app_frenzy.models import Restaurant, MenuItem
+from app_frenzy.schemas import (
+    ListMenuItemResponseSchema,
+    ListRestaurantResponseSchema,
+)
 
 
 router = APIRouter()
@@ -42,3 +46,31 @@ async def list_restaurant(
             status_code=422, detail="Invalid filters or query params."
         )
     return {"status": "success", "restaurants": results}
+
+
+@router.get("/search")
+async def search(
+    terms: str = Query(..., alias="s"),
+):
+    try:
+        restaurants = Search(
+            terms, Restaurant, Restaurant.name_search_vec
+        ).search()
+        menu_items = Search(
+            terms, MenuItem, MenuItem.dish_name_search_vec
+        ).search()
+        restaurant_results = GenerateResponse(
+            restaurants, ListRestaurantResponseSchema
+        ).generate()
+        menu_item_results = GenerateResponse(
+            menu_items, ListMenuItemResponseSchema
+        ).generate()
+    except ValueError:
+        raise HTTPException(
+            status_code=422, detail="Invalid filters or query params."
+        )
+    return {
+        "status": "success",
+        "restaurants": restaurant_results,
+        "dishes": menu_item_results,
+    }

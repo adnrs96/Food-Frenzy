@@ -171,6 +171,21 @@ class RestaurantFilter:
             return session.execute(query).scalars().all()
 
 
+class Search:
+    def __init__(self, terms: str, model, field):
+        self.terms = terms
+        self.model = model
+        self.field = field
+
+    def search(self):
+        with SessionLocal() as session:
+            query = select(self.model)
+            query = query.where(
+                self.field.op("@@")(func.plainto_tsquery(self.terms))
+            )
+            return session.execute(query).scalars().all()
+
+
 class GenerateResponse:
     def __init__(self, results, schema):
         self.results = results
